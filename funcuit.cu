@@ -11,25 +11,18 @@
 //Normal C function to convert equation into tree
 void normal(char* a, long N) //a is the array, N is the size of the array
 {
-  string = "AB+"
-
   TreeNode root;
 
   root.value = '+';
   root.totalChildren = 0;
 
-  addChild(root, '*');
+  root = addChildChar(root, '*');
+  root = addChildChar(root, '*');
+  root = addChildChar(root, '*');
 
-  TreeNode op1;
-  op1.value = 'A';
-  op1.totalChildren = 0;
+  printf("totalChildren: %d\n", root.totalChildren);
 
-  TreeNode op2;
-  op1.value = 'B';
-  op1.totalChildren = 0;
-
-  addChild(and, op1);
-  addChild(and, op2);
+  printTreeStacked(root);
 }
 
 //Normal C function to co\
