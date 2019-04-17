@@ -8,29 +8,29 @@ bool hasChildren(TreeNode n)
 }
 
 //assumes that totalChildren will always be capped at 100
-TreeNode addChildNode(TreeNode root, TreeNode child)
+TreeNode addChildNode(TreeNode* root, TreeNode child)
 {
-  if (root.totalChildren < 100)
+  if ((*root).totalChildren < 100)
   {
-    root.children[root.totalChildren] = *((TreeNodePointer *) &child);
-    root.totalChildren += 1;
+    (*root).children[(*root).totalChildren] = *((TreeNodePointer *) &child);
+    (*root).totalChildren += 1;
   }
 
-  return root;
+  return child;
 }
 
-TreeNode addChildChar(TreeNode root, char charValue)
+TreeNode addChildChar(TreeNode* root, char charValue)
 {
   TreeNode temp;
   temp.value = charValue;
 
-  if (root.totalChildren < 100)
+  if ((*root).totalChildren < 100)
   {
-    root.children[root.totalChildren] = *((TreeNodePointer *) &temp);
-    root.totalChildren = root.totalChildren + 1;
+    (*root).children[(*root).totalChildren] = *((TreeNodePointer *) &temp);
+    (*root).totalChildren = (*root).totalChildren + 1;
   }
 
-  return root;
+  return temp;
 }
 
 

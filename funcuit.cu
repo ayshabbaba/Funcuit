@@ -11,18 +11,17 @@
 //Normal C function to convert equation into tree
 void normal(char* a, long N) //a is the array, N is the size of the array
 {
-  TreeNode root;
+  //create int array to store indeces of '+'
 
-  root.value = '+';
-  root.totalChildren = 0;
+  //read in String from file
 
-  root = addChildChar(root, '*');
-  root = addChildChar(root, '*');
-  root = addChildChar(root, '*');
+  //loop through String and populate indeces array
 
-  printf("totalChildren: %d\n", root.totalChildren);
-
-  printTreeStacked(root);
+  //send to gpu child
+        //loop through indexes array
+            //if i = 0, send 0 - i-1
+            //else send indexes[i]+1 to indexes[i+1]-1 
+        //send OR
 }
 
 //Normal C function to co\
