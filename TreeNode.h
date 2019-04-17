@@ -11,7 +11,8 @@ typedef struct TreeNode_Struct{
 }TreeNode;
 
 bool hasChildren(TreeNode n);
-void addChildNode(TreeNode root, TreeNode child);
-void addChildChar(TreeNode root, char charValue);
+void printTreeStacked(TreeNode root);
+TreeNode addChildNode(TreeNode root, TreeNode child);
+TreeNode addChildChar(TreeNode root, char charValue);
 
 #endif

@@ -8,24 +8,43 @@ bool hasChildren(TreeNode n)
 }
 
 //assumes that totalChildren will always be capped at 100
-void addChildNode(TreeNode root, TreeNode child)
+TreeNode addChildNode(TreeNode root, TreeNode child)
 {
   if (root.totalChildren < 100)
   {
     root.children[root.totalChildren] = *((TreeNodePointer *) &child);
     root.totalChildren += 1;
   }
+
+  return root;
 }
 
-void addChildChar(TreeNode root, char charValue)
+TreeNode addChildChar(TreeNode root, char charValue)
 {
   TreeNode temp;
   temp.value = charValue;
-  temp.totalChildren = 0;
 
   if (root.totalChildren < 100)
   {
     root.children[root.totalChildren] = *((TreeNodePointer *) &temp);
-    root.totalChildren += 1;
+    root.totalChildren = root.totalChildren + 1;
   }
+
+  return root;
+}
+
+
+void printTreeStacked(TreeNode root)
+{
+  printf("%c : [", root.value);
+  TreeNode temp;
+  for(int i = 0; i < root.totalChildren; i++)
+  {
+    temp = *((TreeNode *) &root.children[i]);
+    if (i != root.totalChildren - 1)
+      printf("%c, ", temp.value);
+    else
+      printf("%c", temp.value);
+  }
+  printf("]\n");
 }
