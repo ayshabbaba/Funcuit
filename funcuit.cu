@@ -9,12 +9,24 @@
 
 
 //Normal C function to convert equation into tree
-void normal(char* a, long N) //a is the array, N is the size of the array
+void normal() //a is the array, N is the size of the array
 {
-  //create int array to store indeces of '+'
+// create int array to store indeces of '+'
+  int op[100]; 
+//read in String from file
 
-  //read in String from file
+FILE* file = fopen("data.txt","r");
+if(file == NULL)
+{
+	printf("Could not open %s  make sure your file is valid.\n","data.txt");
+	exit(0);
+}
 
+
+char* input;
+fgets(input, 100, file);
+
+printf("%s",input);
   //loop through String and populate indeces array
 
   //send to gpu child
@@ -44,7 +56,8 @@ void initialize(float *a, long N) {
 }
 
 void print(float* a, long N) {
-   if (doPrint) {
+ 
+ if (1==0) {//doPrint was here
    long i;
    for (i = 0; i < N; ++i)
       printf("%d ", (int) a[i]);
@@ -81,7 +94,7 @@ void finish(float* a, long N, const char* c) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
+/*
 int main()
 {
   float* a = (float*) malloc(N*sizeof(float));
@@ -94,7 +107,7 @@ int main()
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 2: GPU
-  init(a, N, "GPU");
+ init(a, N, "GPU");
 
   // How many threads, how many cores?
   int numThreads = 1024; // This can vary, up to 1024
@@ -114,4 +127,10 @@ int main()
 
   free(a);
   return 0;
+}
+*/
+
+int main()
+{
+normal();
 }

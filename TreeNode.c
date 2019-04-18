@@ -38,7 +38,8 @@ void printTreeStacked(TreeNode root)
 {
   printf("%c : [", root.value);
   TreeNode temp;
-  for(int i = 0; i < root.totalChildren; i++)
+int i = 0;  
+for( i = 0; i < root.totalChildren; i++)
   {
     temp = *((TreeNode *) &root.children[i]);
     if (i != root.totalChildren - 1)
