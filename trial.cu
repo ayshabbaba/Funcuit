@@ -3,7 +3,8 @@
 int main() //a is the array, N is the size of the array
 {
 	// create int array to store indeces of '+'
-	int op[100];
+	int op[100][100];
+	
 	//read in String from file
 
 	FILE* file = fopen("data.txt","r");
@@ -21,6 +22,10 @@ int main() //a is the array, N is the size of the array
 	//loop through String and populate indeces array
 	int i = 0;
 	int index = 0;
+
+	char output[500];
+	output[0] = '*';
+	int j = 1;
 	for(i = 0; i < strlen(input);i++)
 	{
 		if(input[i] == '+')
@@ -28,7 +33,11 @@ int main() //a is the array, N is the size of the array
 			op[index] = i;
 			index++;
 			printf("Found a + at %d\n",i);
+			output
+			[j] = input[i];
+
 		}
+
 	}
 	//send to gpu child
 	//loop through indexes array
