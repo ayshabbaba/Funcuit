@@ -19,32 +19,33 @@ Node* nodes = (Node*)malloc((sizeof(Node) * SIZE));
 //GPU Function
 //Sents relevant arguements to GPU child which makes a node in position i of array
 
-__global__ void gpu_cuit(int totalOps, int* op, char* input) //end is exclusive
+__global__ void gpu_cuit(int totalPlusses, int* op, char* input) //end is exclusive
 {
-	printf("top of gpu method\n");
+	//char* lclvar = "actual string";
+	//printf("top of gpu method %s\n", lclvar);
 	int i = threadIdx.x;
 	int start;
 	int end;
+	int j;
+
+	//printf("IN GPU: gpu paramaters: int totalPlusses: (%d), int* op (%p), %s, op[%d]: %d \n", totalPlusses, op, input, i, op[i]);
+
 	if(i == 0)
 	{
-		printf("inside if i == 0, op[%d]: %d\n", i,op[i]);
+		//printf("inside if i == 0, op[%d]: %d\n", i,op[i]);
 		start = 0;
 		end = op[i] - 1;
 	}
 	else
 	{
-			printf("inside if i != 0, op[%d]: %d\n", i,op[i]);
+		//printf("inside if i != 0, op[%d]: %d\n", i, op[i]);
 		start = op[i - 1] + 1;
 		end  = op[i] - 1;
 	}
 
-	printf("assignmet of start (%d) and end (%d). totalOps: %d THREAD: %d\n", start, end, totalOps, i);
-		int j;
-		for(j = start; j <= end; j++)
-		{
-			printf("Our substring: %c", input[j]);
-		}
+	printf("assignmet of start (%d) and end (%d). totalOps: %d THREAD: %d\n", start, end, totalPlusses, i);
 
+}
 
 	//create a Node
 //	Node* temp = (Node*)malloc(sizeof(Node));
@@ -69,7 +70,7 @@ __global__ void gpu_cuit(int totalOps, int* op, char* input) //end is exclusive
 	//assign position i to Node
 //
 //		printf("currArrIndex %d, %s\n", currArrIndex, substring);
-}
+
 
 /*
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,12 +124,11 @@ printf("***************************************************\n");
 
 int main()
 {
-	char input[SIZE * 5 + SIZE]; 	//maximum number of arguments + operators
-	int op[SIZE];      //holds indexes / indices of operators of the input
+	char input[SIZE * 5 + SIZE]; //= (char*)malloc(sizeof(char) * (SIZE * 5 + SIZE)); 	//maximum number of arguments + operators      //holds indexes / indices of operators of the input
 	int i = 0;		     //loop variable
-	int totalOps = 0;     //holds the position of the last element of the op array
+	int totalPlusses = 0;     //holds the position of the last element of the op array
 	int currArrIndex = 0;
-	long N = 64000000;
+	//long N = 64000000;
 
 	//define file object and read it in
 	FILE* file = fopen(filename,"r");
@@ -141,40 +141,50 @@ int main()
 	//read in equation
 	fgets(input, SIZE, file);
 
-	printf("%d \n", i );
+	int* op; //= (int*) malloc(sizeof(int) * SIZE);
+	cudaMallocManaged(&op, SIZE);
 
-	//op = (int*) malloc(sizeof(int) * SIZE);
+	int* gpu_op;
+	char* gpu_input;
+	cudaMalloc(&gpu_op, sizeof(int) * SIZE);
+	cudaMalloc(&gpu_input, sizeof(char) * (SIZE * 5 + SIZE));
 
-	int newVar = 0;
 	//iterate through and save operator indexes
 	for(i = 0; i < strlen(input); i++)
 	{
-
 		if(input[i] == '+')
 		{
-			printf("i: %d \n", i );
-
-
-			op[newVar] = i;
-
-			newVar = newVar + 1;
-			printf("op[%d]: %d \n", newVar, op[newVar] );
+			op[totalPlusses] = i;
+			totalPlusses++;
 		}
 	}
 
-	// Test: GPU
-	//cudaMallocManaged(&sub, 6);
+	cudaMemcpy(gpu_op, op, (sizeof(int) * SIZE), cudaMemcpyDeviceToHost);
+	cudaMemcpy(gpu_input, input,  sizeof(char) * (SIZE * 5 + SIZE), cudaMemcpyDeviceToHost);
 
-	long numCores = N / 1024 + 1;
-	int numThreads = 1024;
+	char* sub;
+	cudaMallocManaged(&sub, 1000);
+	strcpy(sub, input);
 
 	printf("before gpu call\n");
-//	gpu_cuit<<<1, 8>>>(totalOps, op, input);
+	printf("IN MAIN: gpu paramaters: int totalPlusses: (%d), int* op (%p), char* input (%p) \n", totalPlusses, op, sub);
+
+	for (i = 0; i < totalPlusses; i++)
+	{
+		printf("op[%d]: %d \n", i, op[i]);
+	}
+
+	gpu_cuit<<<1, 8>>>(totalPlusses, op, sub);
 	printf("after gpu call\n");
 
 	cudaDeviceSynchronize();
 
 	printf("after gpu synchronize\n");
+
+	//free(op);
+	//sfree(input);
+	cudaFree(gpu_op);
+	cudaFree(gpu_input);
 
 	exit(0);
 }

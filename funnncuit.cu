@@ -102,12 +102,8 @@ int main()
 	{
 		if(input[i] == '+')
 		{
-      printf("i: %d \n", i );
-
 			op[index] = i;
 			index++;
-
-      printf("op[%d]: %d \n", index, op[index] );
 		}
 	}
 
