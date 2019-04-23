@@ -17,15 +17,17 @@ typedef struct Node_Struct
 
 //create array of type node, of size x;
 
+
 //GPU Function
 //Sents relevant arguements to GPU child which makes a node in position i of array
-void gpu_cuit(int start, int end, int index, char* input) //end is exclusive
+__global__ void gpu_cuit(int count, int index, char* input) //end is exclusive
 {
-	char* c = (char*) malloc(5);
-	strncpy(c, input+start, end-start+1);
+
+	int i = threadIdx.x;
 	//create a Node
 	//assign position i to Node
-	printf("%d, end %d, index %d, c %s\n", start, end, index, c);
+	if(i < index)
+	printf("count %d, %s\n", count, input);
 }
 
 /*
@@ -38,7 +40,6 @@ for (i = 0; i < N; ++i) {
 a[i] = pow(rand() % 10, 2);
 }
 }
-
 void print(float* a, long N) {
 if (doPrint) {
 long i;
@@ -47,17 +48,14 @@ printf("%d ", (int) a[i]);
 printf("\n");
 }
 }
-
 void starttime() {
 gettimeofday( &start, 0 );
 }
-
 void endtime(const char* c) {
 gettimeofday( &end, 0 );
 double elapsed = ( end.tv_sec - start.tv_sec ) * 1000.0 + ( end.tv_usec - start.tv_usec ) / 1000.0;
 printf("%s: %f ms\n", c, elapsed);
 }
-
 void init(float* a, long N, const char* c) {
 printf("***************** %s **********************\n", c);
 printf("Initializing array....\n");
@@ -67,7 +65,6 @@ print(a, N);
 printf("Running %s...\n", c);
 starttime();
 }
-
 void finish(float* a, long N, const char* c) {
 endtime(c);
 printf("Done.\n");
@@ -75,14 +72,14 @@ print(a, N);
 printf("***************************************************\n");
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 */
 
 int main()
 {
 
-	long N = 1024;
+
 	char input[SIZE * 5 + SIZE]; 	//maximum number of arguments + operators
+	long N = sizeof(input);
 	int op[SIZE];      //holds indexes / indices of operators of the input
 	int i = 0;		     //loop variable
 	int index = 0;     //holds the position of the last element of the op array
@@ -105,8 +102,12 @@ int main()
 	{
 		if(input[i] == '+')
 		{
+      printf("i: %d \n", i );
+
 			op[index] = i;
 			index++;
+
+      printf("op[%d]: %d \n", index, op[index] );
 		}
 	}
 
@@ -118,16 +119,25 @@ int main()
 
 	int count = 0;
 
+	char* sub;
+	cudaMallocManaged(&sub, 5);
+//	strcpy(sub, input);
+
 	//send to gpu children
 	for(i = 0; i <= index - 1;i++)
 	{
+
 		if(i == 0)
 		{
-			gpu_cuit(0, op[i] - 1, count, input);
+			strncpy(sub, input, op[i]);
+			gpu_cuit<<<1,1>>>(count, index, sub);
 		}else
 		{
-			gpu_cuit(op[i-1] + 1, op[i] - 1, count, input);
+			strncpy(sub, input+op[i-1] + 1, op[i]-op[i-1]-1);
+			gpu_cuit<<<1,1>>>(count, index, sub);
 		}
+
+		cudaDeviceSynchronize();
 		count++;
 	}
 
