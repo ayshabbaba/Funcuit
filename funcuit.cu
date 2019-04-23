@@ -1,26 +1,37 @@
+/************************************************************************************
+ * Converts a boolean equation in DNF form to a list of nodes.
+ * 		Compares parallel computations with varied shared memory allocation
+ *    and and iterative implementation.
+ *
+ * We affirm that we wrote this program ourselves in accordance to FIU the Code of
+ * Academic Integrity.
+ * 		Authors: Alejandro Koszarycz
+ *             Alejandro Ravelo
+ *						 Aysha Habbaba
+ * 						 Rahul Mittal
+ **********************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#define SIZE 10000
-#define BLOCKSIZE 1
-#define filename "data.txt"
+#define SIZE 10000						//max number of operations
+#define BLOCKSIZE 1						//total blocks
+#define filename "data.txt"		//filename is by default data.txt
 
+//represents each 'subtree' with values op and children c1-c5
 typedef struct Node_Struct
 {
-	char op;
-	char c1;
-	char c2;
-	char c3;
-	char c4;
-	char c5;
+	char op, c1, c2, c3, c4, c5;
 } Node;
 
-//GPU Function
-//Sents relevant arguements to GPU child which makes a node in position i of array
-__global__ void gpu_cuit_all_shared(int totalPlusses, int* op, char* input, Node** nodes) //end is exclusive
+//***GPU Functions***/
+
+//Creates a node representing the operation at point i, and adds it to the nodes array at position i
+//Both operator indicies array and input string are part of the block's share'd memory
+__global__ void gpu_cuit_all_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes) //end is exclusive
 {
 	int i = threadIdx.x;
-	__shared__ int op_shared[BLOCKSIZE];
+	__shared__ char op_shared[BLOCKSIZE];
+	__shared__ int opIndexes_shared[BLOCKSIZE];
 	__shared__ char input_shared[BLOCKSIZE];
 
 	int start;
@@ -28,21 +39,27 @@ __global__ void gpu_cuit_all_shared(int totalPlusses, int* op, char* input, Node
 	int j;
 
 	op_shared[i] = op[i];
+	opIndexes_shared[i] = opIndexes[i];
 	input_shared[i] = input[i];
 
 	if(i == 0)
 	{
 		start = 0;
-		end = op_shared[i] - 1;
+		end = opIndexes_shared[i] - 1;
 	}
 	else
 	{
-		start = op_shared[i - 1] + 1;
-		end  = op_shared[i] - 1;
+		start = opIndexes_shared[i - 1] + 1;
+		end  = opIndexes_shared[i] - 1;
 	}
 
 	Node* temp = (Node*)malloc(sizeof(Node));
-	temp->op = '+';
+	temp->op = op_shared[i];
+	temp->c1 = ' ';
+	temp->c2 = ' ';
+	temp->c3 = ' ';
+	temp->c4 = ' ';
+	temp->c5 = ' ';
 	int l = 0;
 
 	for(j = start; j <= end; j++ )
@@ -65,30 +82,39 @@ __global__ void gpu_cuit_all_shared(int totalPlusses, int* op, char* input, Node
 	nodes[i] = temp;
 }
 
-__global__ void gpu_cuit_op_shared(int totalPlusses, int* op, char* input, Node** nodes) //end is exclusive
+//Creates a node representing the operation at point i, and adds it to the nodes array at position i
+//Operator indices array is part of the block's shared memory
+__global__ void gpu_cuit_op_shared(int totalPlusses, char* op ,int* opIndexes, char* input, Node** nodes) //end is exclusive
 {
 	int i = threadIdx.x;
-	__shared__ int op_shared[BLOCKSIZE];
+	__shared__ char op_shared[BLOCKSIZE];
+	__shared__ int opIndexes_shared[BLOCKSIZE];
 
 	int start;
 	int end;
 	int j;
 
 	op_shared[i] = op[i];
+	opIndexes_shared[i] = opIndexes[i];
 
 	if(i == 0)
 	{
 		start = 0;
-		end = op_shared[i] - 1;
+		end = opIndexes_shared[i] - 1;
 	}
 	else
 	{
-		start = op_shared[i - 1] + 1;
-		end  = op_shared[i] - 1;
+		start = opIndexes_shared[i - 1] + 1;
+		end  = opIndexes_shared[i] - 1;
 	}
 
 	Node* temp = (Node*)malloc(sizeof(Node));
-	temp->op = '+';
+	temp->op = op_shared[i];
+	temp->c1 = ' ';
+	temp->c2 = ' ';
+	temp->c3 = ' ';
+	temp->c4 = ' ';
+	temp->c5 = ' ';
 	int l = 0;
 
 	for(j = start; j <= end; j++ )
@@ -111,7 +137,9 @@ __global__ void gpu_cuit_op_shared(int totalPlusses, int* op, char* input, Node*
 	nodes[i] = temp;
 }
 
-__global__ void gpu_cuit_input_shared(int totalPlusses, int* op, char* input, Node** nodes) //end is exclusive
+//Creates a node representing the operation at point i, and adds it to the nodes array at position i
+//Input string is part of the block's shared memory
+__global__ void gpu_cuit_input_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes) //end is exclusive
 {
 	int i = threadIdx.x;
 	__shared__ char input_shared[BLOCKSIZE];
@@ -125,16 +153,21 @@ __global__ void gpu_cuit_input_shared(int totalPlusses, int* op, char* input, No
 	if(i == 0)
 	{
 		start = 0;
-		end = op[i] - 1;
+		end = opIndexes[i] - 1;
 	}
 	else
 	{
-		start = op[i - 1] + 1;
-		end  = op[i] - 1;
+		start = opIndexes[i - 1] + 1;
+		end  = opIndexes[i] - 1;
 	}
 
 	Node* temp = (Node*)malloc(sizeof(Node));
-	temp->op = '+';
+	temp->op = op[i];
+	temp->c1 = ' ';
+	temp->c2 = ' ';
+	temp->c3 = ' ';
+	temp->c4 = ' ';
+	temp->c5 = ' ';
 	int l = 0;
 
 	for(j = start; j <= end; j++ )
@@ -157,30 +190,33 @@ __global__ void gpu_cuit_input_shared(int totalPlusses, int* op, char* input, No
 	nodes[i] = temp;
 }
 
-//Sents relevant arguements to GPU child which makes a node in position i of array
-__global__ void gpu_cuit_none_shared(int totalPlusses, int* op, char* input, Node** nodes) //end is exclusive
+//Creates a node representing the operation at point i, and adds it to the nodes array at position i
+//no shared memory used
+__global__ void gpu_cuit_none_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes) //end is exclusive
 {
 	int i = threadIdx.x;
 	int start;
 	int end;
 	int j;
 
-	op[i] = op[i];
-	input[i] = input[i];
-
 	if(i == 0)
 	{
 		start = 0;
-		end = op[i] - 1;
+		end = opIndexes[i] - 1;
 	}
 	else
 	{
-		start = op[i - 1] + 1;
-		end  = op[i] - 1;
+		start = opIndexes[i - 1] + 1;
+		end  = opIndexes[i] - 1;
 	}
 
 	Node* temp = (Node*)malloc(sizeof(Node));
-	temp->op = '+';
+	temp->op = op[i];
+	temp->c1 = ' ';
+	temp->c2 = ' ';
+	temp->c3 = ' ';
+	temp->c4 = ' ';
+	temp->c5 = ' ';
 	int l = 0;
 
 	for(j = start; j <= end; j++ )
@@ -203,7 +239,11 @@ __global__ void gpu_cuit_none_shared(int totalPlusses, int* op, char* input, Nod
 	nodes[i] = temp;
 }
 
-void normal_cuit(int totalPlusses, int* op, char* input, Node** nodes)
+//***Iterative Function****/
+
+//Creates a node representing the operation at point i, and adds it to the nodes array at position i
+//Uses a for loop to replicate the above thread independent methods
+void normal_cuit(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes)
 {
 	int start;
 	int end;
@@ -214,16 +254,21 @@ void normal_cuit(int totalPlusses, int* op, char* input, Node** nodes)
 		if(i == 0)
 		{
 			start = 0;
-			end = op[i] - 1;
+			end = opIndexes[i] - 1;
 		}
 		else
 		{
-			start = op[i - 1] + 1;
-			end  = op[i] - 1;
+			start = opIndexes[i - 1] + 1;
+			end  = opIndexes[i] - 1;
 		}
 
 		Node* temp = (Node*)malloc(sizeof(Node));
-		temp->op = '+';
+		temp->op = op[i];
+		temp->c1 = ' ';
+		temp->c2 = ' ';
+		temp->c3 = ' ';
+		temp->c4 = ' ';
+		temp->c5 = ' ';
 		int l = 0;
 		int j = 0;
 		for(j = start; j <= end; j++ )
@@ -243,40 +288,66 @@ void normal_cuit(int totalPlusses, int* op, char* input, Node** nodes)
 	}
 }
 
+//***Utility Methods**/
+
+//Timing
 struct timeval start, end;
 
-void starttime()
+void start_time()
 {
 	gettimeofday( &start, 0 );
 }
 
-double endtime()
+double end_time()
 {
 	gettimeofday( &end, 0 );
 	return (( end.tv_sec - start.tv_sec ) * 1000.0 + ( end.tv_usec - start.tv_usec ) / 1000.0);
 }
 
-void simulate(int iterations, int totalPlusses, int* op, char* input, Node** nodes, int version)
+//print nodes list
+void print_nodes(Node** nodes, int totalNodes)
+{
+	for (int i = 0; i < totalNodes; i++)
+	{
+		printf("Operation: %c\n\tOperands: ", nodes[i]->op);
+		if (nodes[i]->c1 != ' ' && nodes[i]->c2 == ' ')
+			printf("c1: %c\n", nodes[i]->c1);
+		else if (nodes[i]->c1 != ' ' && nodes[i]->c2 != ' ' && nodes[i]->c3 == ' ')
+			printf("c1: %c, c2: %c\n", nodes[i]->c1, nodes[i]->c2);
+		else if (nodes[i]->c1 != ' ' && nodes[i]->c2 != ' ' && nodes[i]->c3 != ' ' && nodes[i]->c4 == ' ')
+			printf("c1: %c, c2: %c, c3: %c\n", nodes[i]->c1, nodes[i]->c2, nodes[i]->c3);
+		else if (nodes[i]->c1 != ' ' && nodes[i]->c2 != ' ' && nodes[i]->c3 != ' ' && nodes[i]->c4 != ' ' && nodes[i]->c5 == ' ')
+			printf("c1: %c, c2: %c, c3: %c, c4: %c\n", nodes[i]->c1, nodes[i]->c2, nodes[i]->c3, nodes[i]->c4);
+		else
+			printf("c1: %c, c2: %c, c3: %c, c4: %c, c5: %c\n", nodes[i]->c1, nodes[i]->c2, nodes[i]->c3, nodes[i]->c4, nodes[i]->c5);
+	}
+}
+
+//simulates the running of the gpu and iterative cuit methods n times, and calcuates the average elapsed
+//takes all necessary arguments for the cuit methods plus
+	//int n - number of iterations
+	//int version - which cuit method to call (0 = all_shared, 1 = op_shared, 2 = input_shared, 3 = none_shared, 4 = normal)
+void simulate(int n, int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes, int version)
 {
 	int i = 0;
 	double avg = 0.0;
-	while(i < iterations)
+	while(i < n)
 	{
-		starttime();
+		start_time();
 
 		if(version == 0)
-			gpu_cuit_all_shared<<<1, totalPlusses>>>(totalPlusses, op, input, nodes);
+			gpu_cuit_all_shared<<<BLOCKSIZE, totalPlusses>>>(totalPlusses, op, opIndexes, input, nodes);
 		else if(version == 1)
-			gpu_cuit_op_shared<<<1, totalPlusses>>>(totalPlusses, op, input, nodes);
+			gpu_cuit_op_shared<<<BLOCKSIZE, totalPlusses>>>(totalPlusses, op, opIndexes, input, nodes);
 		else if(version == 2)
-			gpu_cuit_input_shared<<<1, totalPlusses>>>(totalPlusses, op, input, nodes);
+			gpu_cuit_input_shared<<<BLOCKSIZE, totalPlusses>>>(totalPlusses, op, opIndexes, input, nodes);
 		else if(version == 3)
-			gpu_cuit_none_shared<<<1, totalPlusses>>>(totalPlusses, op, input, nodes);
+			gpu_cuit_none_shared<<<BLOCKSIZE, totalPlusses>>>(totalPlusses, op, opIndexes, input, nodes);
 		else if(version == 4)
-			normal_cuit(totalPlusses, op, input, nodes);
+			normal_cuit(totalPlusses, op, opIndexes, input, nodes);
 
 		cudaDeviceSynchronize();
-		avg += endtime();
+		avg += end_time();
 		i++;
 	}
 
@@ -291,7 +362,7 @@ void simulate(int iterations, int totalPlusses, int* op, char* input, Node** nod
 	else if (version == 4)
 		printf("\nSequential computation: ");
 
-	avg = avg / iterations;
+	avg = avg / n;
 	printf("%lf\n", avg);
 }
 
@@ -301,8 +372,10 @@ int main()
 	cudaMallocManaged(&input, sizeof(char) * SIZE * 5 + SIZE);
 	int i = 0;		//loop variable
 	int totalPlusses = 0;     //holds the position of the last element of the op array
-	int* op; 						//holds indexes / indices of operators of the input
-	cudaMallocManaged(&op, SIZE);
+	int* opIndexes; 						//holds indexes / indices of operators of the input
+	cudaMallocManaged(&opIndexes, sizeof(int) * SIZE);
+	char* op; 				      		//holds operators of the input
+	cudaMallocManaged(&op, sizeof(char) * SIZE);
 	Node** nodes_gpu;
 	cudaMallocManaged(&nodes_gpu, sizeof(Node*) * SIZE);
 	Node** nodes_normal;
@@ -322,9 +395,10 @@ int main()
 	//iterate through and save operator indexes
 	for(i = 0; i < strlen(input); i++)
 	{
-		if(input[i] == '+')
+		if(input[i] == '+' || input[i] == '*')
 		{
-			op[totalPlusses] = i;
+			op[totalPlusses] = input[i];
+			opIndexes[totalPlusses] = i;
 			totalPlusses++;
 		}
 	}
@@ -334,16 +408,18 @@ int main()
 	printf("Average time (s) with %d iterations\n", n);
 	//gpu timed tests
 	//both arrays shared
-	simulate(n, totalPlusses, op, input, nodes_gpu, 0);
+	simulate(n, totalPlusses, op, opIndexes, input, nodes_gpu, 0);
 	//op array shared
-	simulate(n, totalPlusses, op, input, nodes_gpu, 1);
+	simulate(n, totalPlusses, op, opIndexes, input, nodes_gpu, 1);
 	//input array shared
-	simulate(n, totalPlusses, op, input, nodes_gpu, 2);
+	simulate(n, totalPlusses, op, opIndexes, input, nodes_gpu, 2);
 	//no arrays shared
-	simulate(n, totalPlusses, op, input, nodes_gpu, 3);
+	simulate(n, totalPlusses, op, opIndexes, input, nodes_gpu, 3);
 
 	//serial timed test
-	simulate(n, totalPlusses, op, input, nodes_normal, 4);
+	simulate(n, totalPlusses, op, opIndexes, input, nodes_normal, 4);
+
+	//print_nodes(nodes_normal, totalPlusses);
 
 	//free everything
 	cudaFree(input);
@@ -353,6 +429,7 @@ int main()
 		free(nodes_normal[i]);
 	}
 	cudaFree(op);
+	cudaFree(opIndexes);
 	cudaFree(nodes_gpu);
 	cudaFree(nodes_normal);
 
