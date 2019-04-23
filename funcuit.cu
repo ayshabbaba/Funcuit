@@ -28,7 +28,7 @@ typedef struct Node_Struct
 
 //Creates a node representing the operation at point i, and adds it to the nodes array at position i
 //Both operator indicies array and input string are part of the block's share'd memory
-__global__ void gpu_cuit_all_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes) //end is exclusive
+__global__ void gpu_cuit_all_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes)
 {
 	int i = threadIdx.x;
 	__shared__ char op_shared[BLOCKSIZE];
@@ -85,7 +85,7 @@ __global__ void gpu_cuit_all_shared(int totalPlusses, char* op, int* opIndexes, 
 
 //Creates a node representing the operation at point i, and adds it to the nodes array at position i
 //Operator indices array is part of the block's shared memory
-__global__ void gpu_cuit_op_shared(int totalPlusses, char* op ,int* opIndexes, char* input, Node** nodes) //end is exclusive
+__global__ void gpu_cuit_op_shared(int totalPlusses, char* op ,int* opIndexes, char* input, Node** nodes)
 {
 	int i = threadIdx.x;
 	__shared__ char op_shared[BLOCKSIZE];
@@ -140,7 +140,7 @@ __global__ void gpu_cuit_op_shared(int totalPlusses, char* op ,int* opIndexes, c
 
 //Creates a node representing the operation at point i, and adds it to the nodes array at position i
 //Input string is part of the block's shared memory
-__global__ void gpu_cuit_input_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes) //end is exclusive
+__global__ void gpu_cuit_input_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes)
 {
 	int i = threadIdx.x;
 	__shared__ char input_shared[BLOCKSIZE];
@@ -193,7 +193,7 @@ __global__ void gpu_cuit_input_shared(int totalPlusses, char* op, int* opIndexes
 
 //Creates a node representing the operation at point i, and adds it to the nodes array at position i
 //no shared memory used
-__global__ void gpu_cuit_none_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes) //end is exclusive
+__global__ void gpu_cuit_none_shared(int totalPlusses, char* op, int* opIndexes, char* input, Node** nodes)
 {
 	int i = threadIdx.x;
 	int start;
@@ -422,7 +422,7 @@ int main(int argc, char **argv)
 
 	int n = 10000;
 
-	printf("Average time (s) with %d iterations\n", n);
+	printf("\nAverage time (ms) with %d iterations and %d nodes:\n", n, totalPlusses);
 	//gpu timed tests
 	//both arrays shared
 	simulate(n, totalPlusses, op, opIndexes, input, nodes_gpu, 0);
@@ -435,6 +435,8 @@ int main(int argc, char **argv)
 
 	//serial timed test
 	simulate(n, totalPlusses, op, opIndexes, input, nodes_normal, 4);
+
+	printf("\n");
 
 	if (print)
 		print_nodes(nodes_normal, totalPlusses);
