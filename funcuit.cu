@@ -5,17 +5,18 @@
  *
  * We affirm that we wrote this program ourselves in accordance to FIU the Code of
  * Academic Integrity.
- * 		Authors: Alejandro Koszarycz
- *             Alejandro Ravelo
- *						 Aysha Habbaba
- * 						 Rahul Mittal
+ *    Authors: Alejandro Ravelo
+ *             Alejandro Koszarycz
+ *             Aysha Habbaba
+ *             Rahul Mittal
  **********************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#define SIZE 10000						//max number of operations
-#define BLOCKSIZE 1						//total blocks
-#define filename "data.txt"		//filename is by default data.txt
+#include <getopt.h>
+#define SIZE 10000                //max number of operations
+#define BLOCKSIZE 1               //total blocks
+#define filename "data.txt"       //filename is by default data.txt
 
 //represents each 'subtree' with values op and children c1-c5
 typedef struct Node_Struct
@@ -310,6 +311,8 @@ void print_nodes(Node** nodes, int totalNodes)
 	for (int i = 0; i < totalNodes; i++)
 	{
 		printf("Operation: %c\n\tOperands: ", nodes[i]->op);
+
+		//print only relavant children
 		if (nodes[i]->c1 != ' ' && nodes[i]->c2 == ' ')
 			printf("c1: %c\n", nodes[i]->c1);
 		else if (nodes[i]->c1 != ' ' && nodes[i]->c2 != ' ' && nodes[i]->c3 == ' ')
@@ -366,20 +369,34 @@ void simulate(int n, int totalPlusses, char* op, int* opIndexes, char* input, No
 	printf("%lf\n", avg);
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	char* input;	//stores read in string
+	int c = 0;                   //getopt var
+	int print = 0;               //if 1, print nodes
+	char* input;                 //stores read in string
 	cudaMallocManaged(&input, sizeof(char) * SIZE * 5 + SIZE);
-	int i = 0;		//loop variable
-	int totalPlusses = 0;     //holds the position of the last element of the op array
-	int* opIndexes; 						//holds indexes / indices of operators of the input
+	int i = 0;                  //loop variable
+	int totalPlusses = 0;       //holds the position of the last element of the op array
+	int* opIndexes;             //holds indexes / indices of operators of the input
 	cudaMallocManaged(&opIndexes, sizeof(int) * SIZE);
-	char* op; 				      		//holds operators of the input
+	char* op;                   //holds operators of the input
 	cudaMallocManaged(&op, sizeof(char) * SIZE);
 	Node** nodes_gpu;
 	cudaMallocManaged(&nodes_gpu, sizeof(Node*) * SIZE);
 	Node** nodes_normal;
 	cudaMallocManaged(&nodes_normal, sizeof(Node*) * SIZE);
+
+	//allows for command line command to enable node list printing
+	while ((c = getopt(argc, argv, "p")) != -1) {
+			 if (c == 'p')
+			 	print = 1;
+			 else
+			 {
+					 printf("Sorry, you entered an invalid flag. Please try again.");
+					 exit(0);
+					 break;
+			 }
+	 }
 
 	//define file object and read it in
 	FILE* file = fopen(filename,"r");
@@ -419,7 +436,8 @@ int main()
 	//serial timed test
 	simulate(n, totalPlusses, op, opIndexes, input, nodes_normal, 4);
 
-	//print_nodes(nodes_normal, totalPlusses);
+	if (print)
+		print_nodes(nodes_normal, totalPlusses);
 
 	//free everything
 	cudaFree(input);
