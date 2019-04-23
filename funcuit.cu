@@ -3,7 +3,7 @@
  * 		Compares parallel computations with varied shared memory allocation
  *    and and iterative implementation.
  *
- * We affirm that we wrote this program ourselves in accordance to FIU the Code of
+ * We affirm that we wrote this program ourselves in accordance to FIU's Code of
  * Academic Integrity.
  *    Authors: Alejandro Ravelo
  *             Alejandro Koszarycz
